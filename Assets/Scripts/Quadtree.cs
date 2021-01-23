@@ -21,7 +21,11 @@ public class Quadtree : MonoBehaviour
         m_Chunk.node.depth = 0;
         yield return ExpandChunk();
         Normalizer.Normalize(m_Chunk);
-        yield return BakeMesh();
+        var mb = new MeshBuilder();
+        var mesh = mb.BakeMesh(m_Chunk, GetHeight);
+        m_Filter.sharedMesh = mesh;
+
+        // yield return BakeMesh();
     }
 
     IEnumerator ExpandChunk()
@@ -140,4 +144,26 @@ public class Chunk
 {
     public Node node;
     public RectInt area;
+
+    public List<Node> GetLeafs()
+    {
+        Queue<Node> nodes = new Queue<Node>();
+        List<Node> leafs = new List<Node>();
+
+        nodes.Enqueue(node);
+        while (nodes.Count > 0)
+        {
+            var node = nodes.Dequeue();
+            if (node.expanded)
+            {
+                nodes.Enqueue(node.NE);
+                nodes.Enqueue(node.NW);
+                nodes.Enqueue(node.SE);
+                nodes.Enqueue(node.SW);
+            }
+            else
+                leafs.Add(node);
+        }
+        return leafs;
+    }
 }

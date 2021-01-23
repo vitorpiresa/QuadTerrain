@@ -10,7 +10,7 @@ public class Node
 
     public Node[] Expand()
     {
-        if(this.depth > 7)
+        if(this.depth > 6)
             return null;
 
         var width = area.width / 2;

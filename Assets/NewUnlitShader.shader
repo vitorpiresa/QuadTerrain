@@ -3,6 +3,7 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
+		_Heightmap ("Texture", 2D) = "white" {}
 	}
 	SubShader
 	{
@@ -33,15 +34,16 @@
 			};
 
 			sampler2D _MainTex;
+			sampler2D _Heightmap;
 			float4 _MainTex_ST;
 
 			v2f vert (appdata v)
 			{
 				v2f o;
-				float4 heightmap = tex2Dlod(_MainTex, float4(v.vertex.xz/256, 0, 1));
+				float4 heightmap = tex2Dlod(_Heightmap, float4(v.vertex.xz/256, 0, 1));
 				o.vertex = UnityObjectToClipPos(float3(v.vertex.x, heightmap.r * 1024.0, v.vertex.z));
 				
-				o.uv = v.vertex.xz/256;
+				o.uv = v.vertex.xz/8;
 				UNITY_TRANSFER_FOG(o,o.vertex);
 				return o;
 			}
@@ -49,7 +51,7 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				// sample the texture
-				fixed4 col = tex2D(_MainTex, i.uv) * 2;
+				fixed4 col = tex2D(_MainTex, i.uv);
 				// col = fixed4(1, 1, 1, 1);
 				// apply fog
 				UNITY_APPLY_FOG(i.fogCoord, col);
