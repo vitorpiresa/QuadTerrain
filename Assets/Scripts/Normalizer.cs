@@ -5,14 +5,12 @@ using UnityEngine;
 
 public class Normalizer
 {
-    Chunk m_Chunk;
-
-    private List<Node> GetLeafs()
+    private static List<Node> GetLeafs(Chunk chunk)
     {
         Queue<Node> nodes = new Queue<Node>();
         List<Node> leafs = new List<Node>();
 
-        nodes.Enqueue(m_Chunk.node);
+        nodes.Enqueue(chunk.node);
         while (nodes.Count > 0)
         {
             var node = nodes.Dequeue();
