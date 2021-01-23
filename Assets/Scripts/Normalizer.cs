@@ -27,35 +27,27 @@ public class Normalizer
         return leafs;
     }
 
+    private static List<Node> GetLeafsOfLevel(Chunk chunk, int level)
+    {
+        return GetLeafs(chunk).Where(a => a.depth == level).ToList();
+    }
+
     public static void Normalize(Chunk chunk)
     {
-        Queue<Node> nodes = new Queue<Node>();
-        List<Node> leafs = new List<Node>();
-
-        nodes.Enqueue(chunk.node);
-        while (nodes.Count > 0)
+        for (int level = 7; level >= 0; level--)
         {
-            var node = nodes.Dequeue();
-            if (node.expanded)
-            {
-                nodes.Enqueue(node.NE);
-                nodes.Enqueue(node.NW);
-                nodes.Enqueue(node.SE);
-                nodes.Enqueue(node.SW);
-            }
-            else
-                leafs.Add(node);
-        }
+            var leafs = GetLeafsOfLevel(chunk, level);
 
-        foreach (var leaf in leafs)
-            for (int x = leaf.area.xMin; x < leaf.area.xMax; x++)
-                for (int y = leaf.area.yMin; y < leaf.area.yMax; y++)
-                {
-                    ExpandToLevel(chunk, x - 1, y, leaf.depth - 1);
-                    ExpandToLevel(chunk, x, y - 1, leaf.depth - 1);
-                    ExpandToLevel(chunk, x + 1, y, leaf.depth - 1);
-                    ExpandToLevel(chunk, x, y + 1, leaf.depth - 1);
-                }
+            foreach (var leaf in leafs)
+                for (int x = leaf.area.xMin; x < leaf.area.xMax; x++)
+                    for (int y = leaf.area.yMin; y < leaf.area.yMax; y++)
+                    {
+                        ExpandToLevel(chunk, x - 1, y, leaf.depth - 1);
+                        ExpandToLevel(chunk, x, y - 1, leaf.depth - 1);
+                        ExpandToLevel(chunk, x + 1, y, leaf.depth - 1);
+                        ExpandToLevel(chunk, x, y + 1, leaf.depth - 1);
+                    }
+        }
     }
 
     static void ExpandToLevel(Chunk chunk, int x, int y, int level)
