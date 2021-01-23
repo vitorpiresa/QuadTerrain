@@ -1,36 +1,89 @@
-﻿using System.Collections;
+﻿using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Normalizer
 {
-    public static void Normalize(Texture2D texture)
-    {
-        for(int x = 0; x < texture.width; x++)
-            for(int y = 0; y < texture.height; y++)
-            {
-                var level = PixelToLevel(texture.GetPixel(x, y));
-            }
-    }
+    Chunk m_Chunk;
 
-    private static int PixelToLevel(Color32 color)
+    private List<Node> GetLeafs()
     {
-        Color[] levels = new Color[]
+        Queue<Node> nodes = new Queue<Node>();
+        List<Node> leafs = new List<Node>();
+
+        nodes.Enqueue(m_Chunk.node);
+        while (nodes.Count > 0)
         {
-            new Color(1, 1, 1, 1),
-            new Color(1, 0, 0, 1),
-            new Color(0, 1, 0, 1),
-            new Color(0, 0, 1, 1),
-            new Color(1, 1, 0, 1),
-            new Color(1, 0, 1, 1),
-            new Color(0, 1, 1, 1),
-            new Color(0, 0, 0, 1)
-        };
-        return System.Array.IndexOf(levels, color);
+            var node = nodes.Dequeue();
+            if (node.expanded)
+            {
+                nodes.Enqueue(node.NE);
+                nodes.Enqueue(node.NW);
+                nodes.Enqueue(node.SE);
+                nodes.Enqueue(node.SW);
+            }
+            else
+                leafs.Add(node);
+        }
+        return leafs;
     }
 
-    private static void NormalizePixelToLevel(int x, int y)
+    public static void Normalize(Chunk chunk)
     {
-        
+        Queue<Node> nodes = new Queue<Node>();
+        List<Node> leafs = new List<Node>();
+
+        nodes.Enqueue(chunk.node);
+        while (nodes.Count > 0)
+        {
+            var node = nodes.Dequeue();
+            if (node.expanded)
+            {
+                nodes.Enqueue(node.NE);
+                nodes.Enqueue(node.NW);
+                nodes.Enqueue(node.SE);
+                nodes.Enqueue(node.SW);
+            }
+            else
+                leafs.Add(node);
+        }
+
+        foreach (var leaf in leafs)
+            for (int x = leaf.area.xMin; x < leaf.area.xMax; x++)
+                for (int y = leaf.area.yMin; y < leaf.area.yMax; y++)
+                {
+                    ExpandToLevel(chunk, x - 1, y, leaf.depth - 1);
+                    ExpandToLevel(chunk, x, y - 1, leaf.depth - 1);
+                    ExpandToLevel(chunk, x + 1, y, leaf.depth - 1);
+                    ExpandToLevel(chunk, x, y + 1, leaf.depth - 1);
+                }
+    }
+
+    static void ExpandToLevel(Chunk chunk, int x, int y, int level)
+    {
+        if (x < 0 || y < 0 || x >= chunk.area.width || y >= chunk.area.height)
+            return;
+
+        var queue = new Queue<Node>(new Node[] { chunk.node });
+
+        while (queue.Count > 0)
+        {
+            var node = queue.Dequeue();
+            if (node.depth >= level)
+                return;
+
+            if (!node.expanded)
+                node.Expand();
+
+            if (node.NE.area.Contains(new Vector2Int(x, y)))
+                queue.Enqueue(node.NE);
+            if (node.NW.area.Contains(new Vector2Int(x, y)))
+                queue.Enqueue(node.NW);
+            if (node.SE.area.Contains(new Vector2Int(x, y)))
+                queue.Enqueue(node.SE);
+            if (node.SW.area.Contains(new Vector2Int(x, y)))
+                queue.Enqueue(node.SW);
+        }
     }
 }
