@@ -12,23 +12,24 @@ public class Quadtree : MonoBehaviour
 
     [SerializeField] MeshFilter m_Filter;
 
-    IEnumerator Start()
+    public virtual void Start()
     {
         m_Chunk = new Chunk();
-        m_Chunk.area = new RectInt(0, 0, 256, 256);
+        m_Chunk.area = new RectInt(0, 0, 2048, 2048);
         m_Chunk.node = new Node();
         m_Chunk.node.area = m_Chunk.area;
         m_Chunk.node.depth = 0;
-        yield return ExpandChunk();
+
+        ExpandChunk();
         Normalizer.Normalize(m_Chunk);
+
         var mb = new MeshBuilder();
         var mesh = mb.BakeMesh(m_Chunk, GetHeight);
-        m_Filter.sharedMesh = mesh;
 
-        // yield return BakeMesh();
+        m_Filter.sharedMesh = mesh;
     }
 
-    IEnumerator ExpandChunk()
+    void ExpandChunk()
     {
         var nodes = new Queue<Node>();
         nodes.Enqueue(m_Chunk.node);
@@ -43,74 +44,9 @@ public class Quadtree : MonoBehaviour
                         nodes.Enqueue(childNode);
             }
         }
-        yield return null;
     }
 
-    IEnumerator BakeMesh()
-    {
-        var nodes = new Queue<Node>();
-        nodes.Enqueue(m_Chunk.node);
-
-        var mesh = new Mesh();
-        mesh.Clear();
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        m_Filter.mesh = mesh;
-
-        var vertices = new List<Vector3>();
-        var normals = new List<Vector3>();
-        var indices = new List<int>();
-
-        while(nodes.Count > 0)
-        {
-            var node = nodes.Dequeue();
-            if(node.expanded)
-            {
-                nodes.Enqueue(node.NE);
-                nodes.Enqueue(node.NW);
-                nodes.Enqueue(node.SE);
-                nodes.Enqueue(node.SW);
-            }
-            else
-            {
-                var v1 = new Vector3(node.area.xMin, GetHeight(node.area.xMin, node.area.yMin), node.area.yMin);
-                var v2 = new Vector3(node.area.xMin, GetHeight(node.area.xMin, node.area.yMax), node.area.yMax);
-                var v3 = new Vector3(node.area.xMax, GetHeight(node.area.xMax, node.area.yMax), node.area.yMax);
-                var v4 = new Vector3(node.area.xMax, GetHeight(node.area.xMax, node.area.yMin), node.area.yMin);
-                
-                var t = vertices.Count;
-                int[] tgs = default;
-                if(node.type == NodeType.SW)
-                    tgs = new int[]{t, t+1, t+2, t+2, t+3, t};
-                else if(node.type == NodeType.NW)
-                    tgs = new int[]{t+1, t+2, t+3, t+3, t, t+1};
-                else if(node.type == NodeType.NE)
-                    tgs = new int[]{t+2, t+3, t, t, t+1, t+2};
-                else
-                    tgs = new int[]{t+3, t, t+1, t+1, t+2, t+3};
-                
-                var a1 = v2 - v1;
-                var b1 = v3 - v1;
-                Vector3 n1 = default;
-                n1.x = a1.y * b1.z - a1.z * b1.y;
-                n1.y = a1.z * b1.x - a1.x * b1.z;
-                n1.z = a1.x * b1.y - a1.y * b1.x;
-                n1.Normalize();
-
-                vertices.AddRange(new Vector3[]{v1, v2, v3, v4});
-                indices.AddRange(tgs);
-                normals.AddRange(new Vector3[]{n1, n1, n1, n1});
-                mesh.SetVertices(vertices);
-                mesh.SetTriangles(indices, 0);
-                mesh.SetNormals(normals);
-                yield return null;
-            }
-        }
-        mesh.RecalculateNormals();  
-        mesh.UploadMeshData(true);
-        yield return null;
-    }
-
-    private float GetHeight(int x, int y)
+    public virtual float GetHeight(int x, int y)
     {
         y += 256;
         return m_Heightmap.GetPixelBilinear(x / (float)m_Heightmap.width, y / (float)m_Heightmap.height).r * 1024;
@@ -133,7 +69,7 @@ public class Quadtree : MonoBehaviour
                 var c3 = Mathf.Clamp(y / (float)node.area.width, c1, c2);
                 
                 var diff = c3 - GetHeight(x, y);
-                if(Mathf.Abs(diff) >= 6)
+                if(Mathf.Abs(diff) >= 12)
                     return false;
             }
         return true;
