@@ -4,7 +4,6 @@ public class Node
 {
     public Node SW, SE, NW, NE;
     public RectInt area;
-    public NodeType type;
     public int depth;
     public bool expanded;
 
@@ -23,22 +22,18 @@ public class Node
         SW = new Node();
         SW.area = new RectInt(minx, miny, width, width);
         SW.depth = depth;
-        SW.type = NodeType.SW;
         
         SE = new Node();
         SE.area = new RectInt(minx + width, miny, width, width);
         SE.depth = depth;
-        SE.type = NodeType.SE;
 
         NW = new Node();
         NW.area = new RectInt(minx, miny + width, width, width);
         NW.depth = depth;
-        NW.type = NodeType.NW;
 
         NE = new Node();
         NE.area = new RectInt(minx + width, miny + width, width, width);
         NE.depth = depth;
-        NE.type = NodeType.NE;
 
         return new Node[]{SW, SE, NW, NE};
     }
